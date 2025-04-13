@@ -1,0 +1,52 @@
+// Show loading message
+    function showLoading() {
+      loadingMessage.style.display = 'block';
+    }
+    
+    // Hide loading message
+    function hideLoading() {
+      loadingMessage.style.display = 'none';
+    }
+    
+    // Mobile device detection for optimizations
+    function isMobileDevice() {
+      return (window.innerWidth <= 768) || 
+        (navigator.userAgent.match(/Android/i) ||
+         navigator.userAgent.match(/webOS/i) ||
+         navigator.userAgent.match(/iPhone/i) ||
+         navigator.userAgent.match(/iPad/i) ||
+         navigator.userAgent.match(/iPod/i) ||
+         navigator.userAgent.match(/BlackBerry/i) ||
+         navigator.userAgent.match(/Windows Phone/i));
+    }
+    
+    // Adjust UI elements based on device
+    function optimizeForDevice() {
+      if (isMobileDevice()) {
+        // Mobile-specific adjustments
+        document.querySelectorAll('button').forEach(btn => {
+          btn.style.padding = '12px 16px';
+        });
+        
+        // Change chart height for smaller screens
+        document.querySelector('.chart-container').style.height = '250px';
+      } else {
+        // Desktop-specific adjustments
+        document.querySelector('.chart-container').style.height = '400px';
+      }
+    }
+    
+    // Apply optimizations on load and resize
+    window.addEventListener('load', optimizeForDevice);
+    window.addEventListener('resize', optimizeForDevice);
+    
+    // Auto-load sample data on mobile to avoid CORS issues
+    if (isMobileDevice()) {
+      document.addEventListener('DOMContentLoaded', function() {
+        // Short delay to ensure DOM is fully ready
+        setTimeout(loadSampleData, 500);
+      });
+    }
+  </script>
+</body>
+</html>
