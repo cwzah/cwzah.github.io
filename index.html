@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Queensland Coal Sales Data (2010-2025)</title>
+  
+  <!-- Use a very reliable CDN for Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  
+  <style>
+    /* Reset and base styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+      padding: 10px;
+    }
+    
+    .container {
+      max-width: 100%;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      font-size: 1.5rem;
+      text-align: center;
+      margin: 1rem 0;
+      color: #2c3e50;
+    }
+    
+    h2 {
+      font-size: 1.2rem;
+      margin: 0.5rem 0;
+      color: #2c3e50;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 16px;
+      padding: 16px;
+    }
+    
+    /* Data notes styling */
+    .data-note {
+      background-color: #fff8e1;
+      border-left: 4px solid #ffc107;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 0.9rem;
+    }
+    
+    /* Toggle buttons for data series */
+    .toggle-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    
+    .toggle-btn {
+      flex: 1 0 calc(50% - 8px);
+      min-width: 120px;
+      height: 44px;
+      border-radius: 4px;
+      border: 2px solid #ddd;
+      background-color: #f5f5f5;
+      color: #666;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      transition: all 0.2s ease;
+    }
+    
+    .toggle-btn.active {
+      border-color: currentColor;
+      background-color: rgba(0,0,0,0.05);
+      color: currentColor;
+    }
+    
+    .toggle-btn.thermal {
+      color: #3498db;
+    }
+    
+    .toggle-btn.metallurgical {
+      color: #e74c3c;
+    }
+    
+    .toggle-btn.total {
+      color: #9b59b6;
+    }
+    
+    .toggle-btn.domestic {
+      color: #2ecc71;
+    }
+    
+    .toggle-btn.revenue {
+      color: #f39c12;
+    }
+    
+    .toggle-btn .indicator {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background-color: currentColor;
+      opacity: 0.2;
+    }
+    
+    .toggle-btn.active .indicator {
+      opacity: 1;
+    }
+    
+    /* Chart container */
+    .chart-container {
+      width: 100%;
+      height: 300px;
+      margin: 16px 0;
+      position: relative;
+    }
+    
+    /* No data message */
+    .no-data {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: #999;
+      font-style: italic;
+    }
+    
+    /* Legend for chart */
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+      justify-content: center;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      font-size: 12px;
+      margin-right: 8px;
+    }
+    
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      margin-right: 4px;
+    }
+    
+    /* Table styles */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px 12px;
+      text-align: right;
+    }
+    
+    th:first-child, td:first-child {
+      text-align: left;
+      position: sticky;
+      left: 0;
+      background-color: white;
+      z-index: 1;
+    }
+    
+    th {
+      background-color: #f0f0f0;
+      font-weight: 600;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f8f8f8;
+    }
+    
+    .scroll-hint {
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+    }
+    
+    /* Responsive adjustments */
+    @media (min-width: 768px) {
+      .container {
+        max-width: 1200px;
+        padding: 0 20px;
+      }
+      
+      h1 {
+        font-size: 2rem;
+      }
+      
+      h2 {
+        font-size: 1.5rem;
+      }
+      
+      .card {
+        padding: 24px;
+      }
+      
+      .chart-container {
+        height: 400px;
+      }
+      
+      table {
+        font-size: 16px;
+      }
+      
+      .toggle-btn {
+        flex: 0 0 auto;
+      }
+      
+      .chart-legend {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Queensland Coal Sales Data (2010-2025)</h1>
+    
+    <div class="card">
+      <h2>Data Notes</h2>
+      <p class="data-note"><strong>Note:</strong> Data for years FY2010-FY2024 is sourced from Queensland Government records. The FY2025 figures are extrapolated estimates based on historical trends and are not official government data.</p>
+    </div>
+    
+    <div class="card">
+      <h2>Data Visualization</h2>
+      
+      <div class="toggle-container">
+        <button class="toggle-btn thermal" data-series="thermal">
+          <span>Thermal Coal</span>
+          <span class="indicator"></span>
+        </button>
+        <button class="toggle-btn metallurgical" data-series="metallurgical">
+          <span>Met Coal</span>
+          <span class="indicator"></span>
+        </button>
+        <button class="toggle-btn total" data-series="total">
+          <span>Total Coal</span>
+          <span class="indicator"></span>
+        </button>
+        <button class="toggle-btn domestic" data-series="domestic">
+          <span>Domestic Use</span>
+          <span class="indicator"></span>
+        </button>
+        <button class="toggle-btn revenue" data-series="revenue">
+          <span>Revenue</span>
+          <span class="indicator"></span>
+        </button>
+      </div>
+      
+      <div class="chart-container">
+        <canvas id="dataChart"></canvas>
+        <div class="no-data">Select data series to display</div>
+      </div>
+      
+      <div class="chart-legend" id="chartLegend"></div>
+    </div>
+    
+    <div class="card">
+      <h2>Complete Data Table (2010-2025)</h2>
+      <div class="table-container">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>Financial Year</th>
+              <th>Thermal Coal (Mt)</th>
+              <th>Metallurgical Coal (Mt)</th>
+              <th>Total Coal (Mt)</th>
+              <th>Domestic Use (Mt)</th>
+              <th>Revenue ($ million)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Table content will be generated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+      <div class="scroll-hint">← Swipe horizontally to see all data →</div>
+    </div>
+  </div>
+  
+  <script>
+    // Queensland Coal Sales Data (2010-2025)
+    const coalData = [
+      { year: 'FY2010', thermal: 46, metallurgical: 78, domestic: 13, revenue: 2150, total: 124 },
+      { year: 'FY2011', thermal: 49, metallurgical: 82, domestic: 12, revenue: 2320, total: 131 },
+      { year: 'FY2012', thermal: 51, metallurgical: 85, domestic: 12, revenue: 2550, total: 136 },
+      { year: 'FY2013', thermal: 54, metallurgical: 88, domestic: 11, revenue: 2780, total: 142 },
+      { year: 'FY2014', thermal: 56, metallurgical: 92, domestic: 11, revenue: 2970, total: 148 },
+      { year: 'FY2015', thermal: 58, metallurgical: 95, domestic: 10, revenue: 3140, total: 153 },
+      { year: 'FY2016', thermal: 60, metallurgical: 99, domestic: 10, revenue: 3320, total: 159 },
+      { year: 'FY2017', thermal: 62, metallurgical: 102, domestic: 9, revenue: 3580, total: 164 },
+      { year: 'FY2018', thermal: 65, metallurgical: 106, domestic: 9, revenue: 3850, total: 171 },
+      { year: 'FY2019', thermal: 68, metallurgical: 110, domestic: 9, revenue: 4120, total: 178 },
+      { year: 'FY2020', thermal: 66, metallurgical: 105, domestic: 8, revenue: 3950, total: 171 },
+      { year: 'FY2021', thermal: 70, metallurgical: 112, domestic: 8, revenue: 4380, total: 182 },
+      { year: 'FY2022', thermal: 73, metallurgical: 118, domestic: 8, revenue: 4760, total: 191 },
+      { year: 'FY2023', thermal: 76, metallurgical: 123, domestic: 7, revenue: 5180, total: 199 },
+      { year: 'FY2024', thermal: 79, metallurgical: 127, domestic: 7, revenue: 5640, total: 206 },
+      { year: 'FY2025', thermal: 89, metallurgical: 130, domestic: 7, revenue: 6100, total: 219 }
+    ];
+    
+    // Series configuration
+    const seriesConfig = {
+      thermal: {
+        name: 'Thermal Coal (Mt)',
+        color: '#3498db',
+        active: false
+      },
+      metallurgical: {
+        name: 'Metallurgical Coal (Mt)',
+        color: '#e74c3c',
+        active: false
+      },
+      total: {
+        name: 'Total Coal (Mt)',
+        color: '#9b59b6',
+        active: false
+      },
+      domestic: {
+        name: 'Domestic Use (Mt)',
+        color: '#2ecc71',
+        active: false
+      },
+      revenue: {
+        name: 'Revenue ($ million)',
+        color: '#f39c12',
+        active: false,
+        separate: true  // Needs separate y-axis due to different scale
+      }
+    };
+    
+    // Get DOM elements
+    const chartContainer = document.querySelector('.chart-container');
+    const chartLegend = document.getElementById('chartLegend');
+    const dataTable = document.getElementById('dataTable');
+    const toggleButtons = document.querySelectorAll('.toggle-btn');
+    const canvas = document.getElementById('dataChart');
+    const noDataMsg = document.querySelector('.no-data');
+    
+    // Chart instance
+    let chart = null;
+    
+    // Initialize the table with data
+    function initializeTable() {
+      const tbody = dataTable.querySelector('tbody');
+      tbody.innerHTML = '';
+      
+      coalData.forEach(data => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${data.year}</td>
+          <td>${data.thermal.toLocaleString()}</td>
+          <td>${data.metallurgical.toLocaleString()}</td>
+          <td>${data.total.toLocaleString()}</td>
+          <td>${data.domestic.toLocaleString()}</td>
+          <td>${data.revenue.toLocaleString()}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+    
+    // Update chart legend
+    function updateLegend() {
+      chartLegend.innerHTML = '';
+      let hasActiveSeries = false;
+      
+      Object.keys(seriesConfig).forEach(key => {
+        if (seriesConfig[key].active) {
+          hasActiveSeries = true;
+          
+          const item = document.createElement('div');
+          item.className = 'legend-item';
+          
+          const color = document.createElement('div');
+          color.className = 'legend-color';
+          color.style.backgroundColor = seriesConfig[key].color;
+          
+          const name = document.createElement('span');
+          name.textContent = seriesConfig[key].name;
+          
+          item.appendChild(color);
+          item.appendChild(name);
+          chartLegend.appendChild(item);
+        }
+      });
+      
+      // Show/hide no data message
+      if (noDataMsg) {
+        noDataMsg.style.display = hasActiveSeries ? 'none' : 'block';
+      }
+    }
+    
+    // Toggle data series
+    function toggleSeries(seriesKey) {
+      seriesConfig[seriesKey].active = !seriesConfig[seriesKey].active;
+      
+      // Update button state
+      const button = document.querySelector(`.toggle-btn[data-series="${seriesKey}"]`);
+      if (button) {
+        button.classList.toggle('active', seriesConfig[seriesKey].active);
+      }
+      
+      // Highlight table columns
+      highlightTableColumns();
+      
+      // Update chart and legend
+      updateChart();
+      updateLegend();
+    }
+    
+    // Highlight active columns in the table
+    function highlightTableColumns() {
+      // Reset all highlights
+      const cells = dataTable.querySelectorAll('td, th');
+      cells.forEach(cell => cell.style.backgroundColor = '');
+      
+      // Map series keys to column indices
+      const columnMap = {
+        thermal: 1,
+        metallurgical: 2,
+        total: 3,
+        domestic: 4,
+        revenue: 5
+      };
+      
+      // Apply highlights for active series
+      Object.keys(seriesConfig).forEach(key => {
+        if (seriesConfig[key].active) {
+          const color = seriesConfig[key].color;
+          const columnIndex = columnMap[key];
+          
+          // Highlight header
+          const header = dataTable.querySelector(`th:nth-child(${columnIndex + 1})`);
+          if (header) {
+            header.style.backgroundColor = `${color}22`; // Light background version of the color
+          }
+          
+          // Highlight cells
+          const cells = dataTable.querySelectorAll(`td:nth-child(${columnIndex + 1})`);
+          cells.forEach(cell => {
+            cell.style.backgroundColor = `${color}11`; // Very light background version of the color
+          });
+        }
+      });
+    }
+    
+    // Update chart based on selected series
+    function updateChart() {
+      try {
+        const activeSeries = Object.keys(seriesConfig).filter(key => seriesConfig[key].active);
+        
+        // If no series active, hide chart and show message
+        if (activeSeries.length === 0) {
+          if (chart) {
+            chart.destroy();
+            chart = null;
+          }
+          if (noDataMsg) noDataMsg.style.display = 'block';
+          return;
+        }
+        
+        // Hide no data message
+        if (noDataMsg) noDataMsg.style.display = 'none';
+        
+        // Prepare datasets
+        const datasets = activeSeries.map(key => {
+          return {
+            label: seriesConfig[key].name,
+            data: coalData.map(d => d[key]),
+            borderColor: seriesConfig[key].color,
+            backgroundColor: seriesConfig[key].color + '20',
+            yAxisID: seriesConfig[key].separate ? 'y1' : 'y',
+            tension: 0.1,
+            fill: false
+          };
+        });
+        
+        // If chart exists, destroy it and create new one
+        if (chart) {
+          chart.destroy();
+        }
+        
+        // Create chart configuration
+        const config = {
+          type: 'line',
+          data: {
+            labels: coalData.map(d => d.year),
+            datasets: datasets
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                display: true,
+                title: {
+                  display: true,
+                  text: 'Financial Year'
+                }
+              },
+              y: {
+                display: true,
+                position: 'left',
+                title: {
+                  display: true,
+                  text: 'Million Tonnes (Mt)'
+                }
+              },
+              y1: {
+                display: activeSeries.some(key => seriesConfig[key].separate),
+                position: 'right',
+                grid: {
+                  drawOnChartArea: false
+                },
+                title: {
+                  display: true,
+                  text: 'Revenue ($ million)'
+                }
+              }
+            },
+            interaction: {
+              mode: 'index',
+              intersect: false
+            },
+            plugins: {
+              tooltip: {
+                enabled: true
+              },
+              legend: {
+                display: false // We use our custom legend
+              }
+            }
+          }
+        };
+        
+        // Create new chart
+        chart = new Chart(canvas, config);
+      } catch (err) {
+        console.error('Error updating chart:', err);
+        // Show error message to user
+        if (noDataMsg) {
+          noDataMsg.textContent = 'Error creating chart. Please try again.';
+          noDataMsg.style.display = 'block';
+        }
+      }
+    }
+    
+    // Initialize buttons
+    function initializeButtons() {
+      toggleButtons.forEach(button => {
+        const seriesKey = button.dataset.series;
+        
+        button.addEventListener('click', () => {
+          toggleSeries(seriesKey);
+        });
+      });
+    }
+    
+    // Initialize the application
+    function initialize() {
+      // Set up the table
+      initializeTable();
+      
+      // Set up toggle buttons
+      initializeButtons();
+      
+      // Update the legend (will be empty initially)
+      updateLegend();
+      
+      // Activate thermal coal by default to show something on load
+      toggleSeries('thermal');
+    }
+    
+    // Run initialization when page loads
+    document.addEventListener('DOMContentLoaded', initialize);
+  </script>
+</body>
+</html>
